@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use gpui::{
-    App, AppContext, Context, Corner, DismissEvent, Div, DragMoveEvent, Empty, Entity,
+    App, AppContext, ClickEvent, Context, Corner, DismissEvent, Div, DragMoveEvent, Empty, Entity,
     EventEmitter, FocusHandle, Focusable, InteractiveElement as _, IntoElement, ParentElement,
     Pixels, Render, ScrollHandle, SharedString, StatefulInteractiveElement, StyleRefinement,
     Styled, WeakEntity, Window, div, prelude::FluentBuilder, px, relative, rems,
@@ -737,6 +737,22 @@ impl TabPanel {
                             }
                         })
                         .selected(active)
+                        .when(panel.closable(cx) && tabs_count > 1, |this| {
+                            this.suffix(
+                                Button::new(SharedString::from(format!("close-tab-{}", ix)))
+                                    .icon(IconName::Close)
+                                    .ghost()
+                                    .xsmall()
+                                    .mr_2()
+                                    .on_click({
+                                        let panel = panel.clone();
+                                        cx.listener(move |view, _, window, cx| {
+                                            cx.stop_propagation();
+                                            view.remove_panel(panel.clone(), window, cx);
+                                        })
+                                    }),
+                            )
+                        })
                         .on_click(cx.listener({
                             let is_collapsed = self.collapsed;
                             let dock_area = self.dock_area.clone();
