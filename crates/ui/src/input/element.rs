@@ -829,42 +829,63 @@ impl TextElement {
                 highlighter,
                 diagnostics,
                 ..
-            } => (highlighter.borrow(), diagnostics),
-            _ => return None,
+            } => (Some(highlighter.borrow()), Some(diagnostics)),
+            _ => (None, None),
         };
-        let highlighter = highlighter.as_ref()?;
 
-        let mut offset = visible_byte_range.start;
         let mut styles = vec![];
 
-        for line in text
-            .iter_lines()
-            .skip(visible_range.start)
-            .take(visible_range.len())
-        {
-            let line_len = if is_multi_line {
-                // +1 for `\n`
-                line.len() + 1
-            } else {
-                line.len()
-            };
+        if let Some(highlighter) = highlighter.as_ref().and_then(|h| h.as_ref()) {
+            let mut offset = visible_byte_range.start;
 
-            let range = offset..offset + line_len;
-            let line_styles = highlighter.styles(&range, &cx.theme().highlight_theme);
-            styles = gpui::combine_highlights(styles, line_styles).collect();
+            for line in text
+                .iter_lines()
+                .skip(visible_range.start)
+                .take(visible_range.len())
+            {
+                let line_len = if is_multi_line {
+                    line.len() + 1 // +1 for `\n`
+                } else {
+                    line.len()
+                };
 
-            offset = range.end;
+                let range = offset..offset + line_len;
+                let line_styles = highlighter.styles(&range, &cx.theme().highlight_theme);
+                styles = gpui::combine_highlights(styles, line_styles).collect();
+
+                offset = range.end;
+            }
+
+            if let Some(diagnostics) = diagnostics {
+                let diagnostic_styles = diagnostics.styles_for_range(&visible_byte_range, cx);
+                styles = gpui::combine_highlights(diagnostic_styles, styles).collect();
+            }
+
+            // hover definition style
+            if let Some(hover_style) = self.layout_hover_definition(cx) {
+                styles.push(hover_style);
+            }
+        } else {
+            // default style for the entire visible range
+            styles.push((visible_byte_range.clone(), HighlightStyle::default()));
         }
 
-        let diagnostic_styles = diagnostics.styles_for_range(&visible_byte_range, cx);
+        if !state.custom_highlight_ranges.is_empty() {
+            let custom_styles: Vec<(Range<usize>, HighlightStyle)> = state
+                .custom_highlight_ranges
+                .iter()
+                .filter(|(range, _)| {
+                    range.end >= visible_byte_range.start && range.start < visible_byte_range.end
+                })
+                .map(|(range, style)| {
+                    let intersect = range.start.max(visible_byte_range.start)
+                        ..range.end.min(visible_byte_range.end);
+                    (intersect, *style)
+                })
+                .collect();
 
-        // hover definition style
-        if let Some(hover_style) = self.layout_hover_definition(cx) {
-            styles.push(hover_style);
+            styles = gpui::combine_highlights(styles, custom_styles).collect();
         }
-
-        // Combine marker styles
-        styles = gpui::combine_highlights(diagnostic_styles, styles).collect();
 
         Some(styles)
     }

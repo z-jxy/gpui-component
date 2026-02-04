@@ -11,7 +11,7 @@ use gpui::{
     Subscription, Task, UTF16Selection, Window, actions, div, point, prelude::FluentBuilder as _,
     px,
 };
-use gpui::{Half, TextAlign};
+use gpui::{Half, HighlightStyle, TextAlign};
 use ropey::{Rope, RopeSlice};
 use serde::Deserialize;
 use std::ops::Range;
@@ -359,6 +359,8 @@ pub struct InputState {
 
     pub(super) _context_menu_task: Task<Result<()>>,
     pub(super) inline_completion: InlineCompletion,
+
+    pub(super) custom_highlight_ranges: Vec<(Range<usize>, HighlightStyle)>,
 }
 
 impl EventEmitter<InputEvent> for InputState {}
@@ -440,6 +442,7 @@ impl InputState {
             _context_menu_task: Task::ready(Ok(())),
             _pending_update: false,
             inline_completion: InlineCompletion::default(),
+            custom_highlight_ranges: vec![],
         }
     }
 
@@ -1966,6 +1969,33 @@ impl InputState {
         self.silent_replace_text = true;
         self.replace_text_in_range(range_utf16, new_text, window, cx);
         self.silent_replace_text = false;
+    }
+
+    /// Add a custom highlight style for a specific byte range.
+    pub fn add_highlight_range(
+        &mut self,
+        range: Range<usize>,
+        style: HighlightStyle,
+        cx: &mut Context<Self>,
+    ) {
+        self.custom_highlight_ranges.push((range, style));
+        cx.notify();
+    }
+
+    /// Set all custom highlight ranges at once, replacing any existing ones.
+    pub fn set_highlight_ranges(
+        &mut self,
+        ranges: Vec<(Range<usize>, HighlightStyle)>,
+        cx: &mut Context<Self>,
+    ) {
+        self.custom_highlight_ranges = ranges;
+        cx.notify();
+    }
+
+    /// Clear all custom highlight ranges.
+    pub fn clear_highlight_ranges(&mut self, cx: &mut Context<Self>) {
+        self.custom_highlight_ranges.clear();
+        cx.notify();
     }
 }
 
