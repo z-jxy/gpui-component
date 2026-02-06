@@ -1967,6 +1967,10 @@ impl InputState {
         self.replace_text_in_range(range_utf16, new_text, window, cx);
         self.silent_replace_text = false;
     }
+
+    pub fn scroll_handle(&self) -> &ScrollHandle {
+        &self.scroll_handle
+    }
 }
 
 impl EntityInputHandler for InputState {
