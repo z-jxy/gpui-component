@@ -2001,6 +2001,36 @@ impl InputState {
     pub fn scroll_handle(&self) -> &ScrollHandle {
         &self.scroll_handle
     }
+
+    /// Scroll to the bottom of the multi-line input.
+    ///
+    /// This will scroll to make the last line visible.
+    pub fn scroll_to_bottom(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+        if self.mode.is_single_line() {
+            return;
+        }
+
+        let bottom_offset = -(self.scroll_size.height - self.input_bounds.size.height).max(px(0.));
+
+        let mut offset = self.scroll_handle.offset();
+        offset.y = bottom_offset;
+
+        self.scroll_handle.set_offset(offset);
+        cx.notify();
+    }
+
+    /// Scroll to the top of the multi-line input.
+    pub fn scroll_to_top(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+        if self.mode.is_single_line() {
+            return;
+        }
+
+        let mut offset = self.scroll_handle.offset();
+        offset.y = px(0.);
+
+        self.scroll_handle.set_offset(offset);
+        cx.notify();
+    }
 }
 
 impl EntityInputHandler for InputState {
