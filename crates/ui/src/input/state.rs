@@ -1998,10 +1998,6 @@ impl InputState {
         cx.notify();
     }
 
-    pub fn scroll_handle(&self) -> &ScrollHandle {
-        &self.scroll_handle
-    }
-
     /// Scroll to the bottom of the multi-line input.
     ///
     /// This will scroll to make the last line visible.
