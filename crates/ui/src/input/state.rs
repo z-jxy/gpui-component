@@ -1997,6 +1997,10 @@ impl InputState {
         self.custom_highlight_ranges.clear();
         cx.notify();
     }
+
+    pub fn scroll_handle(&self) -> &ScrollHandle {
+        &self.scroll_handle
+    }
 }
 
 impl EntityInputHandler for InputState {
