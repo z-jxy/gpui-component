@@ -283,7 +283,7 @@ pub struct PopupMenu {
     check_side: Side,
 
     /// The parent menu of this menu, if this is a submenu
-    parent_menu: Option<WeakEntity<Self>>,
+    pub(crate) parent_menu: Option<WeakEntity<Self>>,
     scrollable: bool,
     external_link_icon: bool,
     scroll_handle: ScrollHandle,

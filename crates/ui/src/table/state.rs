@@ -1329,9 +1329,21 @@ where
                 let view = cx.entity().clone();
                 move |this, window: &mut Window, cx: &mut Context<PopupMenu>| {
                     if let Some(row_ix) = view.read(cx).right_clicked_row {
-                        view.update(cx, |menu, cx| {
+                        let menu = view.update(cx, |menu, cx| {
                             menu.delegate_mut().context_menu(row_ix, this, window, cx)
-                        })
+                        });
+
+                        let parent_entity = cx.entity().clone();
+                        for item in &menu.menu_items {
+                            if let crate::menu::PopupMenuItem::Submenu { menu: submenu, .. } = item
+                            {
+                                submenu.update(cx, |view, _| {
+                                    view.parent_menu = Some(parent_entity.downgrade());
+                                });
+                            }
+                        }
+
+                        menu
                     } else {
                         this
                     }
