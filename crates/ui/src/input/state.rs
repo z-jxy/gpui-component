@@ -2027,6 +2027,11 @@ impl InputState {
         self.scroll_handle.set_offset(offset);
         cx.notify();
     }
+
+    pub fn scroll_to_end(&mut self, _: &mut Window, cx: &mut Context<Self>) {
+        let end_offset = self.text.len();
+        self.scroll_to(end_offset, None, cx);
+    }
 }
 
 impl EntityInputHandler for InputState {
